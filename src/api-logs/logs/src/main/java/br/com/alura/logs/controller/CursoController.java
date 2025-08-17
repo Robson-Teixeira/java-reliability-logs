@@ -113,11 +113,27 @@ public class CursoController {
 	
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> deleteCursos(@PathVariable(value = "id") UUID id){
+
+        logger.info("Chamando o cursoService para excluir registro por UUID...");
+
+        logger.info("Chamando o cursoService para validar se o UUID existe...");
+
         Optional<CursoModel> cursoModelOptional = cursoService.findById(id);
         if (!cursoModelOptional.isPresent()) {
+
+            logger.warn("Validação em cursoService não encontrou o registro procurado!");
+
+            logger.warn("Registro não excluído, pois o UUID informado não existe!");
+
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Curso não encontrado!");
         }
+
+        logger.info("Validação em cursoService encontrou o registro procurado!");
+
         cursoService.delete(cursoModelOptional.get());
+
+        logger.info("Registro excluído com sucesso no database!");
+
         return ResponseEntity.status(HttpStatus.OK).body("Curso excluído com sucesso!");
     }
     
