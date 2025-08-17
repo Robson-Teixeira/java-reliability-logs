@@ -139,14 +139,30 @@ public class CursoController {
     
     @PutMapping("/{id}")
     public ResponseEntity<Object> updateCursos(@PathVariable(value = "id") UUID id, @RequestBody @Valid CursoDto cursoDto) {
+
+        logger.info("Chamando o cursoService para atualizar registro por UUID...");
+
+        logger.info("Chamando o cursoService para validar se o UUID existe...");
+
         Optional<CursoModel> cursoModelOptional = cursoService.findById(id);
         if (!cursoModelOptional.isPresent()) {
+
+            logger.warn("Validação em cursoService não encontrou o registro procurado!");
+
+            logger.warn("Registro não atualizado, pois o UUID informado não existe!");
+
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Curso não encontrado!");
         }
+
+        logger.info("Validação em cursoService encontrou o registro procurado!");
+
         var cursoModel = new CursoModel();
         BeanUtils.copyProperties(cursoDto, cursoModel);
         cursoModel.setId(cursoModelOptional.get().getId());
         cursoModel.setDataInscricao(cursoModelOptional.get().getDataInscricao());
+
+        logger.info("Registro atualizado com sucesso no database!");
+
         return ResponseEntity.status(HttpStatus.OK).body(cursoService.save(cursoModel));
     }
 
