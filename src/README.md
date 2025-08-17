@@ -12,3 +12,10 @@
 
 ## Definições
 - `Backlog` é a API de logging
+- Níveis de log
+  - `TRACE`: Fornece o nível mais detalhado de informações de log. Usado para rastrear a execução do código passo a passo e diagnosticar problemas complexos.
+  - `DEBUG`: Usado para registrar informações detalhadas que são úteis durante o desenvolvimento e depuração.
+  - `INFO`: Registra informações gerais sobre o progresso do aplicativo.
+  - `WARN`: Indica uma situação potencialmente prejudicial que pode causar problemas.
+  - `ERROR`: Registra erros graves que impedem o funcionamento correto de uma funcionalidade.
+  - `FATAL`: Designa erros muito graves que provavelmente levarão ao encerramento do aplicativo. Não disponível para uso durante o desenvolvimento.
