@@ -34,18 +34,41 @@ public class CursoController {
 	
 	@PostMapping
 	 public ResponseEntity<Object> saveCurso(@RequestBody @Valid CursoDto cursoDto){
-		
+
+        logger.info("Iniciando processo de inserção de registro de novo curso...");
+
+        logger.info("Chamando o cursoService para validar se o número de matrícula já existe...");
+
 		if(cursoService.existsByNumeroMatricula(cursoDto.getNumeroMatricula())) {
+
+            logger.warn("Novo registro não inserido, pois o número de matrícula já existe!");
+
 			return ResponseEntity.status(HttpStatus.CONFLICT).body("O número de matricula do curso já esta em uso!");
 		}
+
+        logger.info("Validação de número de matrícula executada com sucesso!");
+
+        logger.info("Chamando o cursoService para validar se o número do curso já existe...");
 		
 		if(cursoService.existsByNumeroCurso(cursoDto.getNumeroCurso())) {
+
+            logger.warn("Novo registro não inserido, pois o número do curso já existe!");
+
 			return ResponseEntity.status(HttpStatus.CONFLICT).body("O número do curso já esta em uso!");
 		}
-				
+
+        logger.info("Validação do número de curso executada com sucesso!");
+
+        logger.info("Validações de cursoService sobre cursoDTO executadas com sucesso!");
+
+        logger.info("Chamando o cursoService para armazenar o novo registro...");
+
 		var cursoModel = new CursoModel();
 		BeanUtils.copyProperties(cursoDto, cursoModel);
 		cursoModel.setDataInscricao(LocalDateTime.now(ZoneId.of("UTC")));
+
+        logger.info("Novo registro de curso salvo com sucesso!");
+
 		return ResponseEntity.status(HttpStatus.CREATED).body(cursoService.save(cursoModel));
 	}
 	
