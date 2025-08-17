@@ -1,5 +1,6 @@
 package br.com.alura.logs.controller;
 
+import br.com.alura.logs.exceptions.InternalErrorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.time.LocalDateTime;
@@ -75,10 +77,19 @@ public class CursoController {
 	
 	@GetMapping
 	public ResponseEntity<Page<CursoModel>> getAllCursos(@PageableDefault(page = 0, size = 10, sort = "dataInscricao", direction = Sort.Direction.ASC) Pageable pageable) {
-        logger.info("Buscando por todos os registros");
 
-        return ResponseEntity.status(HttpStatus.OK).body(cursoService.findAll(pageable));
-	}
+        try {
+
+            logger.info("Chamando cursoService para buscar todos os registros...");
+
+            return ResponseEntity.status(HttpStatus.OK).body(cursoService.findAll(pageable));
+        } catch (CannotCreateTransactionException e) {
+
+            logger.error("Erro de comunicação com o database.");
+
+            throw new InternalErrorException("Erro momentâneo, por favor tente mais tarde.", e);
+        }
+    }
 	
 	@GetMapping("/{id}")
 	public ResponseEntity<Object> getOneCursos(@PathVariable(value="id") UUID id) {
