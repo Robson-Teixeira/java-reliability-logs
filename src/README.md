@@ -1,3 +1,6 @@
+## Esquema da aplicação
+![Esquema da aplicação](img/20250817111739.png)
+
 ## Instalações
 - [Docker Desktop](https://docs.docker.com/desktop/install/windows-install/)
 - [WSL](https://learn.microsoft.com/pt-br/windows/wsl/install)
