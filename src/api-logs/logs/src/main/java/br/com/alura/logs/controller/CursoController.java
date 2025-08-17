@@ -4,6 +4,8 @@ import br.com.alura.logs.exceptions.InternalErrorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeansException;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -33,55 +35,62 @@ public class CursoController {
 	public CursoController(CursoService cursoService) {
 		this.cursoService = cursoService;
 	}
-	
-	@PostMapping
-	 public ResponseEntity<Object> saveCurso(@RequestBody @Valid CursoDto cursoDto){
+
+    @PostMapping
+    public ResponseEntity<Object> saveCurso(@RequestBody @Valid CursoDto cursoDto) {
 
         logger.info("Iniciando processo de inserção de registro de novo curso...");
 
         logger.info("Chamando o cursoService para validar se o número de matrícula já existe...");
 
-		if(cursoService.existsByNumeroMatricula(cursoDto.getNumeroMatricula())) {
-
-            logger.warn("Novo registro não inserido, pois o número de matrícula já existe!");
-
-			return ResponseEntity.status(HttpStatus.CONFLICT).body("O número de matricula do curso já esta em uso!");
-		}
-
-        logger.info("Validação de número de matrícula executada com sucesso!");
-
-        logger.info("Chamando o cursoService para validar se o número do curso já existe...");
-		
-		if(cursoService.existsByNumeroCurso(cursoDto.getNumeroCurso())) {
-
-            logger.warn("Novo registro não inserido, pois o número do curso já existe!");
-
-			return ResponseEntity.status(HttpStatus.CONFLICT).body("O número do curso já esta em uso!");
-		}
-
-        logger.info("Validação do número de curso executada com sucesso!");
-
-        logger.info("Validações de cursoService sobre cursoDTO executadas com sucesso!");
-
-        logger.info("Chamando o cursoService para armazenar o novo registro...");
-
-		var cursoModel = new CursoModel();
-		BeanUtils.copyProperties(cursoDto, cursoModel);
-		cursoModel.setDataInscricao(LocalDateTime.now(ZoneId.of("UTC")));
-
-        logger.info("Novo registro de curso salvo com sucesso!");
-
-		return ResponseEntity.status(HttpStatus.CREATED).body(cursoService.save(cursoModel));
-	}
-	
-	
-	@GetMapping
-	public ResponseEntity<Page<CursoModel>> getAllCursos(@PageableDefault(page = 0, size = 10, sort = "dataInscricao", direction = Sort.Direction.ASC) Pageable pageable) {
-
         try {
 
-            logger.info("Chamando cursoService para buscar todos os registros...");
+            if (cursoService.existsByNumeroMatricula(cursoDto.getNumeroMatricula())) {
 
+                logger.warn("Novo registro não inserido, pois o número de matrícula já existe!");
+
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("O número de matricula do curso já esta em uso!");
+            }
+
+            logger.info("Validação de número de matrícula executada com sucesso!");
+
+            logger.info("Chamando o cursoService para validar se o número do curso já existe...");
+
+            if (cursoService.existsByNumeroCurso(cursoDto.getNumeroCurso())) {
+
+                logger.warn("Novo registro não inserido, pois o número do curso já existe!");
+
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("O número do curso já esta em uso!");
+            }
+
+            logger.info("Validação do número de curso executada com sucesso!");
+
+            logger.info("Validações de cursoService sobre cursoDTO executadas com sucesso!");
+
+            logger.info("Chamando o cursoService para armazenar o novo registro...");
+
+            var cursoModel = new CursoModel();
+            BeanUtils.copyProperties(cursoDto, cursoModel);
+            cursoModel.setDataInscricao(LocalDateTime.now(ZoneId.of("UTC")));
+
+            logger.info("Novo registro de curso salvo com sucesso!");
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(cursoService.save(cursoModel));
+        } catch (DataAccessResourceFailureException e) {
+
+            logger.error("Erro de comunicação com o database.");
+
+            throw new InternalErrorException("Erro momentâneo, por favor tente mais tarde.", e);
+        }
+    }
+
+
+    @GetMapping
+    public ResponseEntity<Page<CursoModel>> getAllCursos(@PageableDefault(page = 0, size = 10, sort = "dataInscricao", direction = Sort.Direction.ASC) Pageable pageable) {
+
+        logger.info("Chamando cursoService para buscar todos os registros...");
+
+        try {
             return ResponseEntity.status(HttpStatus.OK).body(cursoService.findAll(pageable));
         } catch (CannotCreateTransactionException e) {
 
@@ -90,51 +99,66 @@ public class CursoController {
             throw new InternalErrorException("Erro momentâneo, por favor tente mais tarde.", e);
         }
     }
-	
-	@GetMapping("/{id}")
-	public ResponseEntity<Object> getOneCursos(@PathVariable(value="id") UUID id) {
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Object> getOneCursos(@PathVariable(value = "id") UUID id) {
 
         logger.info("Chamando o cursoService para buscar registro por UUID...");
 
         logger.info("Chamando o cursoService para validar se o UUID existe...");
 
-		Optional<CursoModel> cursoModelOptional = cursoService.findById(id);
-        if (!cursoModelOptional.isPresent()) {
+        try {
 
-            logger.warn("Validação em cursoService não encontrou o registro procurado!");
+            Optional<CursoModel> cursoModelOptional = cursoService.findById(id);
+            if (!cursoModelOptional.isPresent()) {
 
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Curso não encontrado!");
+                logger.warn("Validação em cursoService não encontrou o registro procurado!");
+
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Curso não encontrado!");
+            }
+
+            logger.info("Validação em cursoService encontrou o registro procurado!");
+
+            return ResponseEntity.status(HttpStatus.OK).body(cursoModelOptional.get());
+        } catch (CannotCreateTransactionException e) {
+
+            logger.error("Erro de comunicação com o database.");
+
+            throw new InternalErrorException("Erro momentâneo, por favor tente mais tarde.", e);
         }
-
-        logger.info("Validação em cursoService encontrou o registro procurado!");
-
-        return ResponseEntity.status(HttpStatus.OK).body(cursoModelOptional.get());
     }
-	
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteCursos(@PathVariable(value = "id") UUID id){
+    public ResponseEntity<Object> deleteCursos(@PathVariable(value = "id") UUID id) {
 
         logger.info("Chamando o cursoService para excluir registro por UUID...");
 
         logger.info("Chamando o cursoService para validar se o UUID existe...");
 
-        Optional<CursoModel> cursoModelOptional = cursoService.findById(id);
-        if (!cursoModelOptional.isPresent()) {
+        try {
+            Optional<CursoModel> cursoModelOptional = cursoService.findById(id);
+            if (!cursoModelOptional.isPresent()) {
 
-            logger.warn("Validação em cursoService não encontrou o registro procurado!");
+                logger.warn("Validação em cursoService não encontrou o registro procurado!");
 
-            logger.warn("Registro não excluído, pois o UUID informado não existe!");
+                logger.warn("Registro não excluído, pois o UUID informado não existe!");
 
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Curso não encontrado!");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Curso não encontrado!");
+            }
+
+            logger.info("Validação em cursoService encontrou o registro procurado!");
+
+            cursoService.delete(cursoModelOptional.get());
+
+            logger.info("Registro excluído com sucesso no database!");
+
+            return ResponseEntity.status(HttpStatus.OK).body("Curso excluído com sucesso!");
+        } catch (CannotCreateTransactionException e) {
+
+            logger.error("Erro de comunicação com o database.");
+
+            throw new InternalErrorException("Erro momentâneo, por favor tente mais tarde.", e);
         }
-
-        logger.info("Validação em cursoService encontrou o registro procurado!");
-
-        cursoService.delete(cursoModelOptional.get());
-
-        logger.info("Registro excluído com sucesso no database!");
-
-        return ResponseEntity.status(HttpStatus.OK).body("Curso excluído com sucesso!");
     }
     
     @PutMapping("/{id}")
@@ -144,26 +168,32 @@ public class CursoController {
 
         logger.info("Chamando o cursoService para validar se o UUID existe...");
 
-        Optional<CursoModel> cursoModelOptional = cursoService.findById(id);
-        if (!cursoModelOptional.isPresent()) {
+        try {
+            Optional<CursoModel> cursoModelOptional = cursoService.findById(id);
+            if (!cursoModelOptional.isPresent()) {
 
-            logger.warn("Validação em cursoService não encontrou o registro procurado!");
+                logger.warn("Validação em cursoService não encontrou o registro procurado!");
 
-            logger.warn("Registro não atualizado, pois o UUID informado não existe!");
+                logger.warn("Registro não atualizado, pois o UUID informado não existe!");
 
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Curso não encontrado!");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Curso não encontrado!");
+            }
+
+            logger.info("Validação em cursoService encontrou o registro procurado!");
+
+            var cursoModel = new CursoModel();
+            BeanUtils.copyProperties(cursoDto, cursoModel);
+            cursoModel.setId(cursoModelOptional.get().getId());
+            cursoModel.setDataInscricao(cursoModelOptional.get().getDataInscricao());
+
+            logger.info("Registro atualizado com sucesso no database!");
+
+            return ResponseEntity.status(HttpStatus.OK).body(cursoService.save(cursoModel));
+        } catch (CannotCreateTransactionException e) {
+            logger.error("Erro de comunicação com o database.");
+
+            throw new InternalErrorException("Erro momentâneo, por favor tente mais tarde.", e);
         }
-
-        logger.info("Validação em cursoService encontrou o registro procurado!");
-
-        var cursoModel = new CursoModel();
-        BeanUtils.copyProperties(cursoDto, cursoModel);
-        cursoModel.setId(cursoModelOptional.get().getId());
-        cursoModel.setDataInscricao(cursoModelOptional.get().getDataInscricao());
-
-        logger.info("Registro atualizado com sucesso no database!");
-
-        return ResponseEntity.status(HttpStatus.OK).body(cursoService.save(cursoModel));
     }
 
 }
