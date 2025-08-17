@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
-import br.com.alura.logs.CursoApplication;
 import br.com.alura.logs.dto.CursoDto;
 import br.com.alura.logs.model.CursoModel;
 import br.com.alura.logs.service.CursoService;
@@ -25,7 +24,7 @@ import br.com.alura.logs.service.CursoService;
 @RequestMapping("/cursos")
 public class CursoController {
 
-    private static Logger logger = LoggerFactory.getLogger(CursoApplication.class);
+    private static Logger logger = LoggerFactory.getLogger(CursoController.class);
 
     final CursoService cursoService;
 	
