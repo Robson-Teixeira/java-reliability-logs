@@ -93,10 +93,21 @@ public class CursoController {
 	
 	@GetMapping("/{id}")
 	public ResponseEntity<Object> getOneCursos(@PathVariable(value="id") UUID id) {
+
+        logger.info("Chamando o cursoService para buscar registro por UUID...");
+
+        logger.info("Chamando o cursoService para validar se o UUID existe...");
+
 		Optional<CursoModel> cursoModelOptional = cursoService.findById(id);
         if (!cursoModelOptional.isPresent()) {
+
+            logger.warn("Validação em cursoService não encontrou o registro procurado!");
+
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Curso não encontrado!");
         }
+
+        logger.info("Validação em cursoService encontrou o registro procurado!");
+
         return ResponseEntity.status(HttpStatus.OK).body(cursoModelOptional.get());
     }
 	
